@@ -22,9 +22,71 @@
 ## 2026 台股趨勢分析與結論
 根據產出的 K 線圖，本組得出以下結論：
 
+<img width="1167" height="793" alt="下載 (1)" src="https://github.com/user-attachments/assets/992b2ce0-1c1f-4f0d-8e0d-4f702e0c9caf" />
+
 * **趨勢判讀**：2026 年初大盤呈現強勢多頭排列（5MA > 20MA > 60MA），反映 AI 伺服器與先進封裝產能達標的市場預期。
 * **量價觀察**：在 34,000 點壓力區出現高檔震盪，但整體支撐力道強勁，多頭格局穩固。
 * **最終結論**：AI 與半導體仍為台灣經濟命脈，技術面上只要未跌破長期均線，後市依舊看好。
+
+## 核心程式碼實作
+本專案特別處理了 `yfinance` 的多重索引（Multi-Index）問題，並將圖表標籤統一為英文以確保跨平台顯示正常。
+
+<details>
+<summary>點擊展開 Python 原始碼</summary>
+
+```python
+import yfinance as yf
+import mplfinance as mpf
+import pandas as pd
+
+def fetch_twii_data(start_date="2025-10-01"):
+    """
+    抓取台股大盤數據並修正 Multi-Index 與型別錯誤。
+    """
+    data = yf.download("^TWII", start=start_date, auto_adjust=True)
+    
+    if data.empty:
+        raise ValueError("無法取得數據，請檢查網路連線。")
+
+    # 處理 yfinance v0.2.x 以上版本可能產生的 Multi-Index
+    if isinstance(data.columns, pd.MultiIndex):
+        data.columns = data.columns.get_level_values(0)
+    
+    data.index = pd.to_datetime(data.index)
+    data = data.dropna()
+
+    # 強制轉換 OHLC 為數值型別，避免繪圖錯誤
+    cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+    for col in cols:
+        if col in data.columns:
+            data[col] = pd.to_numeric(data[col], errors='coerce')
+
+    return data
+
+def plot_stock_chart(data):
+    """
+    繪製符合台灣市場習慣的 K 線圖 (紅漲綠跌)。
+    """
+    mc = mpf.make_marketcolors(up='red', down='green', inherit=True)
+    s  = mpf.make_mpf_style(marketcolors=mc, gridstyle='--', y_on_right=True)
+
+    mpf.plot(
+        data,
+        type='candle',
+        style=s,
+        title='2026 TAIEX (^TWII) Trend Analysis',
+        ylabel='Price (TWD)',
+        ylabel_lower='Volume',
+        volume=True,
+        mav=(5, 20, 60),
+        figsize=(12, 8),
+        tight_layout=True
+    )
+
+if __name__ == "__main__":
+    df = fetch_twii_data()
+    plot_stock_chart(df)
+</details>
 
 ## Vibe Coding 流程優化與創新
 * **流程簡化**：透過「模糊意圖」驅動 AI 處理複雜的金融維度，省去了手寫代碼與解決 Git 報錯的數天時間。
