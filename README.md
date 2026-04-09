@@ -94,4 +94,3 @@ def plot_stock_chart(data):
 if __name__ == "__main__":
     df = fetch_twii_data()
     plot_stock_chart(df)
-</details>
